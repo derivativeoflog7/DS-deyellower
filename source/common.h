@@ -1,51 +1,72 @@
-#ifndef DS_DEYELLOWER_COMMON_H
-#define DS_DEYELLOWER_COMMON_H
+#pragma once
+#include <nds.h>
+#include <stdbool.h>
 
-#define VERSION "2.2.1"
-
-typedef enum {
-    MAIN_MENU,
-    SETTINGS_MENU,
-    SELECT_SCREENS_MENU,
-    SCREEN_ON_LENGTH_MENU,
-    SCREEN_OFF_LENGTH_MENU,
-    REPETITION_COUNT_MENU,
-    MODE_MENU,
-    BACKLIGHT_LEVEL_MENU,
-    RUNNING_SCREEN_ON,
-    RUNNING_SCREEN_OFF,
-    TEST_MODE_WARNING,
-    TEST_MODE
-} Status;
+#define VERSION "3.0pre"
+#define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
+#define DEBUG_BUFFER_SIZE 50
+extern char debug_buffer[]; //for the nocash console, defined in common.c
 
 typedef enum {
-    BOTH,
-    TOP,
-    BOTTOM
-} Screens;
-
-typedef enum {
-    WHITE_SCREEN,
-    CYCLING_COLORS
-} Mode;
-
-typedef enum {
-    DS_WITHOUT_BACKLIGHT_CONTROL,
-    DS_WITH_BACKLIGHT_CONTROL,
-    DSI
+	DSI,
+	DS_WITH_BACKLIGHT_CONTROL,
+	DS_WITHOUT_BACKLIGHT_CONTROL
 } ConsoleType;
 
-#define DEFAULT_SCREEN_ON_LENGTH 240
-#define DEFAULT_SCREEN_OFF_LENGTH 10
-#define DEFAULT_REPETITION_COUNT 12
-#define DEFAULT_MODE WHITE_SCREEN
-#define NUMBER_INPUT_LENGTH 5 // pretty sure 99999 is a good max value for everything in this program
-#define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
-#define TEST_MODE_COMBO (KEY_L | KEY_R | KEY_LEFT | KEY_Y | KEY_SELECT)
+typedef enum {
+	MAIN_MENU,
+	SETTINGS_MENU,
+	RUNNING_PROCESS
+} Status;
 
-void int_to_buffer(int val, int* target);
-int buffer_to_int(int* buf);
-ConsoleType detect_console_type();
-void setBacklightAdjusted(int backlight_level, ConsoleType console_type);
+/** @struct GeneralStatus
+ * Working variables used in all phases
+ * 
+ * @var GenralStatus::current_status
+ * Current status (what the application is doing right now)
+ * 
+ * @var GenralStatus::max_backlight_level
+ * Maximum backlight level (computer at runtime based on console type)
+ * 
+ * @var do_reprint_bottom
+ * Reprint bottom screen on next main loop iteration
+ * 
+ * @var do_reprint_bottom
+ * Reprint top screen on next main loop iteration
+ */
+typedef struct {
+	Status current_status;
+	//TODO figure this out
+	/*const*/ unsigned int max_backlight_level;
+	bool do_reprint_bottom, do_reprint_top;
+} GeneralStatus;
 
-#endif
+/** @struct Consoles
+ * Pointers to both consoles
+ * 
+ * @var Consoles::top
+ * Pointer to top console
+ * 
+ * @var Consoles::bottom
+ * Pointer to bottom console
+ */
+typedef struct {
+	PrintConsole *top, *bottom;
+} Consoles;
+
+ConsoleType detectConsoleType();
+GeneralStatus getGeneralStatus();
+void initMaxBacklightLevel();
+void setCurrentStatus(
+	Status status
+);
+void setReprintBottom(
+	bool val
+);
+void setReprintTop(
+	bool val
+);
+void printBacklightString(
+	const unsigned int backlight_level,
+	const unsigned int max_backlight_level
+);

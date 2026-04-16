@@ -1,57 +1,91 @@
-#ifndef DS_DEYELLOWER_PROCESS_H
-#define DS_DEYELLOWER_PROCESS_H
-
-#include "common.h"
-
-#define WHITE  0b0111111111111111
-#define BLUE   0b0111110000000000
-#define YELLOW 0b0000001111111111
-#define BLACK  0
-
-#define BLUE_INCREMENT   0b0000010000000000
-#define YELLOW_INCREMENT 0b0000000000100001
-#define WHITE_INCREMENT (BLUE_INCREMENT | YELLOW_INCREMENT)
+#pragma once
+#include <nds.h>
+#include <stdbool.h>
 
 typedef enum {
     BLACK_TO_BLUE,
     BLUE_TO_YELLOW,
     YELLOW_TO_WHITE,
     WHITE_TO_BLACK
-} CyclingPhase;
+} CyclingColorsPhase;
 
-void init_screen_on_phase(
-    Mode mode,
-    int minutes,
-    int* seconds,
-    u16* backdrop_color,
-    CyclingPhase* current_cycling_phase
-);
+/** @struct CyclingColorsStatus
+ * Working variables used when running the proces in cycling colors mode
+ * 
+ * @var CyclingColorsStatus::current_phase
+ * Current color transition phase
+ * 
+ * @var CyclingColorsStatus::remaining_delay
+ * Remaining frames of delay
+ * 
+ * @var CyclingColorsStatus::backdrop_color
+ * Current backdrop color (buffered to not interfere with dpad)
+ */
+typedef struct {
+	CyclingColorsPhase current_phase;
+	unsigned int remaining_delay;
+	u16 backdrop_color;
+} CyclingColorsStatus;
 
-void init_screen_off_phase (
-    int minutes,
-    int* seconds
-);
+/** @struct ProcessStatus
+ * Working variables used when the process is running
+ * 
+ * @var ProcessStatus::is_screen_on_phase
+ * Is currently in screen on phase
+ * 
+ * @var ProcessStatus::do_print_time
+ * Print time on screen (X is being held)
+ * 
+ * @var ProcessStatus::do_print_warning
+ * Print screen off phase on screen (X or DPAD is being held)
+ * 
+ * @var ProcessStatus::remaining_seconds
+ * Remaining seconds for current phase
+ * 
+ * @var ProcessStatus::remaining_cycles
+ * Remaining cycles (screen on + screen off phase)
+ * 
+ * @var ProcessStatus::current_backlight_top
+ * Current backlight level for top screen
+ * 
+ * @var ProcessStatus::current_backlight_bottom
+ * Current backlight level for bottom screen
+ * 
+ * @var ProcessStatus::last_backlight_top
+ * Last backlight level (on last iteration) for top screen
+ * 
+ * @var ProcessStatus::last_backlight_bottom
+ * Last backlight level (on last iteration) for bottom screen
+ * 
+ * @var ProcessStatus::current_backdrop_color
+ * Current backdrop color
+ * 
+ * @var ProcessStatus::last_backdrop_color
+ * Last backdrop color (on last iteration)
+ * 
+ * @var ProcessStatus::cycling_colors_status
+ * CyclingColorStatus instance
+ */
+typedef struct {
+	bool is_screen_on_phase, 
+		do_print_time, 
+		do_print_warning;
+	unsigned int remaining_seconds,
+		remaining_cycles;
+	int current_backlight_top,
+		current_backlight_bottom,
+		last_backlight_top,
+		last_backlight_bottom;
+	u16 current_backdrop_color,
+		last_backdrop_color;
+	CyclingColorsStatus cycling_colors_status;
+} ProcessStatus;
 
-void handleBacklight(
-    int *current_backlight_top,
-    int *current_backlight_bottom,
-    int *last_backlight_top,
-    int *last_backlight_bottom,
-    int backlight_level,
-    int MAX_BACKLIGHT_LEVEL,
-    int CONSOLE_TYPE,
-    int is_phase_screen_on,
+void startProcess(u16 keys_held);
+void initCurrentBacklights(int level);
+void printProcess(PrintConsole *p_console);
+void handleProcessInput(
     u16 keys_held,
-    Screens screens
+    u16 keys_down,
+    u16 keys_up
 );
-
-void print_progress_message(
-    PrintConsole* console,
-    int remaining_seconds,
-    int remaining_repetitions,
-    int is_screen_off_phase
-);
-
-void setBackdropBoth(u16 col);
-
-#endif

@@ -4,7 +4,7 @@ Inspired by (and above line stolen from) [3Deyellower](https://github.com/Maniac
 
 
 # Features
-This application allows to set timers for an initial screen on phase (default 4 hours), a screen off phase after the last to let the screen rest and hopefully reduce the chances of damage (default 10 minutes), and how many times to repeat the whole process (default 12 times).  
+This application allows to set timers for an initial screen on phase (default 2 hours), a screen off phase after the last to let the screen rest and hopefully reduce the chances of damage (default 10 minutes), and how many times to repeat the whole process (default 12 times).  
 It's also possible to have only one screen on\* when the process if running.  
 The console will turn off automatically after the last screen on phase is finished.  
 Sleep mode will be disabled once the process is started, allowing to close the lid without interrupting it.  
@@ -42,11 +42,3 @@ It is not guaranteed that the screen off phases are enough to prevent damage to 
 Leaving the console on and plugged to a charger for a prolonged period of time will also definitely shorten the battery's lifetime and it's capacity to hold a charge.  
 Understand and accepts these risks before trying to deyellow screens, with this application or in general.  
 **I'm not responsible for damaged or broken displays, batteries, or other components caused by leaving this application running for long periods of time.**  
-
-# Test mode
-A test mode is present that allows manually change the backlight level and turn the screens on or off.  
-**This test mode is not meant as a replacement for the normal deyellowing process. Avoid rapidly and/or repeatedly turning the screens on and off, and leaving them on for long periods of time. I'm not responsible for damage caused by the misuse of this mode.**  
-To access this mode, press L+R+left+Y+Select on the main menu.  
-Hold L and press up to turn the top screen backlight on, or down to turn it off; hold R for the bottom screen instead (calls [`powerOn`/`powerOff`](https://blocksds.skylyrac.net/libnds/system_8h.html#a033c884f09d843121781af8bc212f8ce) with argument [`PM_BACKLIGHT_TOP`/`PM_BACKLIGHT_BOTTOM`](https://blocksds.skylyrac.net/libnds/system_8h.html#af951f96508c8828937d472bd50ab06a1)).  
-Hold Y and press up to turn on the screens, or down to turn them off (calls [`powerOn`/`powerOff`](https://blocksds.skylyrac.net/libnds/system_8h.html#a033c884f09d843121781af8bc212f8ce) with argument [`POWER_LCD`](https://blocksds.skylyrac.net/libnds/system_8h.html#af951f96508c8828937d472bd50ab06a1)). g 
-Hold X and press up to set backlight level to 0, right for 1, down for 2, left for 3, A for 4, B for 5 (calls [`systemSetBacklightLevel`](https://blocksds.skylyrac.net/libnds/system_8h.html#a9bd93bee5409c05451447034b250959b)) with the corresponding argument).
