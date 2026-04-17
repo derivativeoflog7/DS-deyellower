@@ -262,7 +262,7 @@ void printSettingsMenu(
 	}
 
 	// Print number input and extra instructions at the bottom of the screen
-	if (settings_menu_status.current_screen >= SCREEN_ON_LENGTH) {
+	if (settings_menu_status.current_screen >= _NUMER_INPUTS_SENTINEL) {
 		printNumberInput();
 		// Show invalid value warning if number input is 0 for screen on duration or cycles count
 		if (

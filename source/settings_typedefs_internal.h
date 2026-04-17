@@ -2,12 +2,17 @@
 
 #include "settings.h"
 
+/**
+ * _NUMER_INPUTS_SENTINEL indicates that all values after it use a number input in the setting screen
+ * So when adding new values, make sure to add them accordingly
+ */
 typedef enum {
     MAIN_SETTINGS_MENU,
     SELECT_SCREENS,
     MODE,
     BACKLIGHT_LEVEL,
-    SCREEN_ON_LENGTH,
+    _NUMER_INPUTS_SENTINEL,
+    SCREEN_ON_LENGTH = _NUMER_INPUTS_SENTINEL,
     SCREEN_OFF_LENGTH,
     CYCLE_COUNT,
     CYCLING_COLORS_SPEED
