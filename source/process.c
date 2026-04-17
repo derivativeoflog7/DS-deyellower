@@ -1,8 +1,8 @@
 #include "common.h"
 #include "process.h"
+#include "process_typedefs_internal.h"
 #include "settings.h"
 #include <nds.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 #define WHITE  0b0111111111111111
@@ -69,8 +69,8 @@ void timer_handler() {
  * @param max_backlight_level max backlight level, used to adjust for console type
  */
 void setBacklightAdjusted(
-    unsigned int backlight_level,
-    unsigned int max_backlight_level
+    const unsigned int backlight_level,
+    const unsigned int max_backlight_level
 ) {
     /*
      * https://blocksds.skylyrac.net/libnds/system_8h.html#a9bd93bee5409c05451447034b250959b
@@ -98,7 +98,7 @@ void setBackdropBoth(u16 col) {
  * @param keys_held held keys 
  */
 void handleBacklight(
-	u16 keys_held
+	const u16 keys_held
 ) {
     /*
      * This monster handles changing backlight levels on the screens and turning them on or off
@@ -224,7 +224,7 @@ void handleBacklight(
  * Prints the time and/or screen off warning when the process is running
  * @param p_console console to print on
  */
-void printProcess(PrintConsole *p_console) {
+void printProcess(const PrintConsole *const p_console) {
     // Only print time when X is being held
     if (process_status.do_print_time) {
         // Print phase, remaining time for phase, and remaining cycles
@@ -258,26 +258,24 @@ void printProcess(PrintConsole *p_console) {
  * @param keys_up released keys
  */
 void handleProcessInput(
-    u16 keys_held,
-    u16 keys_down,
-    u16 keys_up
+    const u16 keys_held,
+    const u16 keys_down,
+    const u16 keys_up
 ) {
     u16 *current_backdrop_color = &process_status.current_backdrop_color;
     process_status.last_backdrop_color = *current_backdrop_color;
-    Settings current_settings = getCurrentSettings();
+    const Settings current_settings = getCurrentSettings();
 
     // Handle colors when holding a dpad direction
     if (keys_held & KEY_UP)
         *current_backdrop_color = BLUE;
     else if (keys_held & KEY_RIGHT)
         *current_backdrop_color = YELLOW;
-    else if (keys_held & KEY_DOWN)
+    // Also if dpad is not held, and screen is off
+    else if (keys_held & KEY_DOWN || !process_status.is_screen_on_phase)
         *current_backdrop_color = WHITE;
     else if (keys_held & KEY_LEFT)
         *current_backdrop_color = BLACK;
-    // If dpad is not held, and screen is off, set backdrop to white
-    else if (!process_status.is_screen_on_phase)
-        *current_backdrop_color = WHITE;
     // Otherwise, set according to current phase
     else {
         switch (current_settings.mode) {
@@ -306,18 +304,25 @@ void handleProcessInput(
         setBackdropBoth(*current_backdrop_color);
 
     handleBacklight(keys_held);
+}
 
-    // Progress in modes that have fading colors (if in screen on phase) 
+/**
+ * Fade colors for modes that require it
+ */
+void fadeColors() {
+    const Settings current_settings = getCurrentSettings();
+
+    // Skip progressing fading colors if in screen off phase
     if (!process_status.is_screen_on_phase)
+        return;
+
+    // If there's some remaining delay, decrement it and skip progressing for this iteration
+    if (process_status.general_timer-- > 0)
         return;
 
     switch (current_settings.mode) {
         case CYCLING_COLORS:
             CyclingColorsStatus *cycling_colors_status = &process_status.cycling_colors_status;
-
-            // If there's some remaining delay, decrement it and skip this iteration
-            if (cycling_colors_status->remaining_delay-- > 0)
-                break;
 
             // Increment backdrop color according to phase, and switch phase if necessary
             switch (cycling_colors_status->current_phase) {
@@ -343,8 +348,9 @@ void handleProcessInput(
                     break;
             }
             // Copy delay from settings to remaining delay
-            cycling_colors_status->remaining_delay = current_settings.cycling_colors_settings.delay;
+            process_status.general_timer = current_settings.cycling_colors_settings.delay;
         case WHITE_SCREEN:
+            break;
     }
 }
 
@@ -352,15 +358,21 @@ void handleProcessInput(
  * Initialize parameters and start process 
  * @param keys_held held keys
  */
-void startProcess(u16 keys_held) {
+void startProcess(const u16 keys_held) {
     Settings current_settings = getCurrentSettings();
     setBackdropBoth(WHITE);
+
+    switch (current_settings.mode) {
+        case CYCLING_COLORS:
+            process_status.general_timer = current_settings.cycling_colors_settings.delay;
+        case WHITE_SCREEN:
+            break;
+    }
 
     process_status.is_screen_on_phase = true;
     process_status.remaining_seconds = current_settings.screen_on_duration_mins * 60;
     process_status.remaining_cycles = current_settings.cycle_count;
     process_status.current_backdrop_color = WHITE;
-    process_status.cycling_colors_status.remaining_delay = current_settings.cycling_colors_settings.delay;
     handleBacklight(keys_held);
     setCurrentStatus(RUNNING_PROCESS);
     setReprintBottom(true);
@@ -373,6 +385,6 @@ void startProcess(u16 keys_held) {
  * Initialize current backlight level in process_status 
  * @param level level to initialize to
  */
-void initCurrentBacklights(int level) {
+void initCurrentBacklights(const int level) {
     process_status.current_backlight_top = process_status.current_backlight_bottom = level;
 }

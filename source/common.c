@@ -2,9 +2,7 @@
 #include "process.h"
 #include "settings.h"
 #include <nds.h>
-#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 char debug_buffer[DEBUG_BUFFER_SIZE];
 
@@ -62,7 +60,9 @@ GeneralStatus getGeneralStatus() {
  * Sets reprint for bottom screen
  * @param val boolean value to set
  */
-void setReprintBottom(bool val) {
+void setReprintBottom(
+	const bool val
+) {
 	general_status.do_reprint_bottom = val;
 }
 
@@ -70,7 +70,9 @@ void setReprintBottom(bool val) {
  * Sets reprint for top screen
  * @param val boolean value to set
  */
-void setReprintTop(bool val) {
+void setReprintTop(
+	const bool val
+) {
 	general_status.do_reprint_top = val;
 }
 
@@ -78,7 +80,9 @@ void setReprintTop(bool val) {
  * Sets the current status in the general status
  * @param status Status to set
  */
-void setCurrentStatus(Status status) {
+void setCurrentStatus(
+	const Status status
+) {
 	general_status.current_status = status;
 }
 

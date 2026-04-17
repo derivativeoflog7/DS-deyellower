@@ -1,41 +1,22 @@
 #include <nds/debug.h>
 #include <nds.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include "common.h"
 #include "menu.h"
 #include "process.h"
 #include "settings.h"
 
-int remaining_seconds;
-bool do_reprint_top_screen = true, do_reprint_bottom_screen = true, do_print_progress = false;
-
-/**
- * Allocates and initializes consoles
- * @return Consoles struct containing pointers to top and bottom console
- */
-Consoles initConsoles() {
-    Consoles ret;
-
-    //Allocate
-    ret.bottom = (PrintConsole*)alloca(sizeof(PrintConsole));
-    ret.top = (PrintConsole*)alloca(sizeof(PrintConsole));
-    
-    //Set properties
-    videoSetMode(MODE_0_2D);
-    videoSetModeSub(MODE_0_2D);
-    vramSetBankA(VRAM_A_MAIN_BG);
-    vramSetBankC(VRAM_C_SUB_BG);
-    consoleInit(ret.top, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, true, true);
-    consoleInit(ret.bottom, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
-    return ret;
-}
-
 int main(int argc, char **argv) {
     //Initialize things
     initMaxBacklightLevel();
     systemSetBacklightLevel(5);
-    Consoles consoles = initConsoles();
+
+    PrintConsole top_console, bottom_console;
+    videoSetMode(MODE_0_2D);
+    videoSetModeSub(MODE_0_2D);
+    vramSetBankA(VRAM_A_MAIN_BG);
+    vramSetBankC(VRAM_C_SUB_BG);
+    consoleInit(&top_console, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, true, true);
+    consoleInit(&bottom_console, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
 
     // Main loop
     while (1) {
@@ -44,11 +25,11 @@ int main(int argc, char **argv) {
         
         // Read keys
         scanKeys();
-        int keys_down = keysDown();
-        int keys_held = keysHeld();
-        int keys_up = keysUp(); 
+        const u16 keys_down = keysDown(),
+            keys_held = keysHeld(),
+            keys_up = keysUp();
 
-        // Start to shutdown works anywhere anytime
+        // Start to shut down works anywhere anytime
         if (keys_down & KEY_START)
             systemShutDown();
 
@@ -74,18 +55,22 @@ int main(int argc, char **argv) {
                 break;
         }
 
+        if (general_status.current_status == RUNNING_PROCESS)
+            fadeColors();
+
+
         // Reprint top screen if needed
         if(general_status.do_reprint_top) {
             nocashMessage("Reprint top");
-            consoleSelect(consoles.top);
+            consoleSelect(&top_console);
             consoleClear();
             switch(general_status.current_status) {
                 case MAIN_MENU:
                 case SETTINGS_MENU:
-                    printStatus();
+                    printBanner();
                     break;
                 case RUNNING_PROCESS:
-                    printProcess(consoles.top);
+                    printProcess(&top_console);
                     break;
             }
             
@@ -95,20 +80,19 @@ int main(int argc, char **argv) {
         // Reprint bottom screen if needed
         if (general_status.do_reprint_bottom) {
             nocashMessage("Reprint bottom");
-            consoleSelect(consoles.bottom);
+            consoleSelect(&bottom_console);
             consoleClear();
             switch (general_status.current_status) {
                 case MAIN_MENU:
                     printMainMenu();
                     break;
                 case SETTINGS_MENU:
-                    printSettingsMenu(consoles.bottom);
+                    printSettingsMenu(&bottom_console);
                     break;
                 case RUNNING_PROCESS:
-                    printProcess(consoles.bottom);
+                    printProcess(&bottom_console);
                     break;
             }
-
             setReprintBottom(false);
         }
     }

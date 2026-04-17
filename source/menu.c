@@ -8,7 +8,7 @@
 /**
  * Prints info (including current settings)
  */
-void printStatus () {
+void printBanner() {
 	GeneralStatus general_status = getGeneralStatus();
 	Settings current_settings = getCurrentSettings();
 
@@ -38,6 +38,8 @@ void printStatus () {
 		case 1:
 			printf("DS without backlight control\n");
 			break;
+		default:
+			assert(false);
 	}
 	printf("\n");
 	consoleSetColor(NULL, CONSOLE_LIGHT_GRAY);
@@ -58,6 +60,7 @@ void printStatus () {
 			printf("Cycling colors delay: %ufrm\n", current_settings.cycling_colors_settings.delay);
 			break;
 		case WHITE_SCREEN:
+			break;
 	}
 }
 
@@ -89,6 +92,6 @@ void handleMainMenuInput(
 		return;
 	}
 	setReprintBottom(true);
-	//Technically unneded when going to settings, but not worrying about that simplifies the code
+	//Technically unneeded when going to settings, but not worrying about that simplifies the code
 	setReprintTop(true);
 }

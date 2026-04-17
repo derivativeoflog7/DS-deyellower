@@ -2,7 +2,7 @@
 #include "common.h"
 #include "settings.h"
 
-void printStatus();
+void printBanner();
 void printMainMenu();
 void handleMainMenuInput(
 	const u16 keys_down,

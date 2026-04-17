@@ -26,7 +26,7 @@ Both of these features are experimental, as the effectiveness of the cycling col
 
 # Usage
 For nativating the menus, follow the on-screen instructions.  
-Once the process is started, hold dpad up to temporarly show a blue screen at maximum brightness, right for yellow, down for white, and left for black; hold X to print the remaining time and number of repetitions.  
+Once the process is started, hold dpad up to temporarly show a blue screen at maximum brightness, right for yellow, down for white, and left for black; hold X to print the remaining time and number of cycles.  
 When the screens or backlight are off, the screens/backlight will temporarly turn back on when a button is being held, but please avoid doing it repeatedly and/or rapidly during the screen off phase as it's probably not the best for the screens and nullifies the whole purpose of letting the screens rest.  
 It is possible to disable the screen off phase by setting it's duration to 0, but **this is not generally recommended especially at higher backlight levels**.
 

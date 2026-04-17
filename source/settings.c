@@ -1,8 +1,8 @@
 #include "common.h"
 #include "settings.h"
+#include "settings_typedefs_internal.h"
 #include <assert.h>
 #include <nds.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 // Initialize default settings (apart from backlight level which is done at runtime)
@@ -17,32 +17,23 @@ static Settings current_settings = {
 	}
 };
 
+// Initialize settings menu status
 static SettingsMenuStatus settings_menu_status = {
 	.menu_position = 0,
 	.submenu_position = 0
 };
 
+// Names for modes, extern declared in settings.h
 const char* const MODE_NAMES[] = {
 	[WHITE_SCREEN] = "White screen",
 	[CYCLING_COLORS] = "Cycling colors" 
 };
 
-typedef struct {
-    const SettingScreen target;
-    const char *text;
-} SettingsEntry;
 
-typedef struct {
-    const Screens target;
-    const char *text;
-} ScreenEntry;
-
-typedef struct {
-    const Mode target;
-    const char *text;
-} ModeEntry;
-
-static const SettingsEntry SETTING_ENTRIES[] = {
+/**
+ * Setting entries shown regardless of selected mode
+ */
+static const SettingsEntry COMMON_SETTING_ENTRIES[] = {
     {.target = SELECT_SCREENS, .text = "Select screens"},
     {.target = SCREEN_ON_LENGTH, .text = "Screen on length"},
     {.target = SCREEN_OFF_LENGTH, .text = "Screen off length"},
@@ -51,17 +42,26 @@ static const SettingsEntry SETTING_ENTRIES[] = {
     {.target = BACKLIGHT_LEVEL, .text = "Backlight level"}
 };
 
-static const SettingsEntry CYCLING_COLORS_SETTING_ENTRIES[] = {
-	{.target = CYCLING_COLORS_SPEED, .text = "Cycling colors speed"}
+/**
+ * Setting entries shown only with when a specific mode is selected
+ */
+static const SettingEntriesCollection MODE_SPECIFIC_SETTING_ENTRIES[] = {
+	MAKE_SETTING_ENTRIES_COLLECTION(WHITE_SCREEN),
+	[CYCLING_COLORS] = (SettingEntriesCollection){ .count = 0 + (sizeof((SettingsEntry[]){ {CYCLING_COLORS_SPEED, "Cycling colors speed"} }) / sizeof(SettingsEntry)), .entries = (SettingsEntry[]){ {CYCLING_COLORS_SPEED, "Cycling colors speed"} } }
 };
 
-// The following two must be in the same order as the enums for input code to properly work
+/**
+ * Entries in screens settings submenu
+ */
 static const ScreenEntry SCREEN_ENTRIES[] = {
-    {.target = BOTH, .text = "Both screens"},
-    {.target = TOP, .text = "Top screen"},
-    {.target = BOTTOM, .text = "Bottom screen"},
+    [BOTH] = {.target = BOTH, .text = "Both screens"},
+    [TOP] = {.target = TOP, .text = "Top screen"},
+    [BOTTOM] = {.target = BOTTOM, .text = "Bottom screen"},
 };
 
+/**
+ * Entries in mode settings submenu
+ */
 static const ModeEntry MODE_ENTRIES[] = {
     {.target = WHITE_SCREEN, .text = MODE_NAMES[WHITE_SCREEN]},
     {.target = CYCLING_COLORS, .text = MODE_NAMES[CYCLING_COLORS]}
@@ -88,7 +88,6 @@ static void printListLine (
     consoleSetColor(NULL, CONSOLE_WHITE);
 }
 
-
 /** 
  * Prints a number input and an arrow indicating the currently highlighted digit
  * Printing is hardcoded to be done at lines 2 and 3
@@ -96,7 +95,7 @@ static void printListLine (
 static void printNumberInput() {
 	consoleSetCursor(NULL, 0, 2);
 
-    for (int i = 0; i < NUMBER_INPUT_BUFFER_SIZE; i++) {
+    for (size_t i = 0; i < NUMBER_INPUT_BUFFER_SIZE; i++) {
         printf("%d", settings_menu_status.number_input_buffer[i]);
         if (settings_menu_status.submenu_position == i) {
 			//Print arrow below highlighted digit
@@ -109,13 +108,17 @@ static void printNumberInput() {
 
 /**
  * Puts the individual digits of an unsigned int into a number input buffer of size NUMBER_INPUT_BUFFER_SIZE
- * @param val unsigned int input value
- * @param buf output buffer of size NUMBER_INPUT_BUFFER_SIZE
+ * @param[in] val unsigned int input value
+ * @param[out] buf output buffer of size NUMBER_INPUT_BUFFER_SIZE
  */
-static void uintToBuffer(unsigned int val, unsigned int buf[NUMBER_INPUT_BUFFER_SIZE]) {
-    for (int i = NUMBER_INPUT_BUFFER_SIZE - 1; i >= 0; i--) {
-		printf("%d", i);
-        buf[i] = val % 10;
+static void uintToBuffer(
+	unsigned int val,
+	unsigned int buf[NUMBER_INPUT_BUFFER_SIZE]
+) {
+    for (size_t i = 0; i < NUMBER_INPUT_BUFFER_SIZE; i++) {
+    	size_t j = NUMBER_INPUT_BUFFER_SIZE - i - 1;
+		printf("%d", j);
+        buf[j] = val % 10;
         val /= 10;
     }
     assert(val == 0); // ensure that val is not >= 10**NUMBER_INPUT_BUFFER_SIZE
@@ -123,14 +126,17 @@ static void uintToBuffer(unsigned int val, unsigned int buf[NUMBER_INPUT_BUFFER_
 
 /**
  * Converts the content of a number input buffer of size NUMBER_INPUT_BUFFER_SIZE to an unsigned int value
- * @param buf input buffer of size NUMBER_INPUT_BUFFER_SIZE
+ * @param[in] buf input buffer of size NUMBER_INPUT_BUFFER_SIZE
  * @return output unsigned int value
  */
-static unsigned int bufferToUint(const unsigned int buf[NUMBER_INPUT_BUFFER_SIZE]) {
+static unsigned int bufferToUint(
+	const unsigned int buf[NUMBER_INPUT_BUFFER_SIZE]
+) {
     unsigned int ret = 0, mult = 1;
-    for (int i = NUMBER_INPUT_BUFFER_SIZE - 1; i >= 0; i--) {
-        assert(buf[i] <= 9);
-        ret += buf[i] * mult;
+    for (size_t i = 0; i < NUMBER_INPUT_BUFFER_SIZE; i++) {
+    	size_t j = NUMBER_INPUT_BUFFER_SIZE - i - 1;
+        assert(buf[j] <= 9);
+        ret += buf[j] * mult;
         mult *= 10;
     }
     return ret;
@@ -140,36 +146,39 @@ static unsigned int bufferToUint(const unsigned int buf[NUMBER_INPUT_BUFFER_SIZE
  * Prints the settings menu
  * @param p_console pointer to console that is being printed
  */
-void printSettingsMenu(PrintConsole *p_console) {
+void printSettingsMenu(
+	const PrintConsole *p_console
+) {
 	GeneralStatus general_status = getGeneralStatus();
-	
+
 	switch (settings_menu_status.current_screen) {
 		case MAIN_SETTINGS_MENU:
-			int adj_menu_position = settings_menu_status.menu_position - ARRAY_LENGTH(SETTING_ENTRIES);
-			//assert(settings_menu_status.menu_position < ARRAY_LENGTH(SETTING_ENTRIES));
+			const size_t common_setting_entries_count = ARRAY_LENGTH(COMMON_SETTING_ENTRIES),
+				mode_specific_setting_entries_count = MODE_SPECIFIC_SETTING_ENTRIES[current_settings.mode].count,
+				// Calculate number of actual entries in main settings menu
+				total_setting_entries_count = common_setting_entries_count + mode_specific_setting_entries_count,
+				// Calculate cursor position to be used for mode-specific settings
+				adj_menu_position = settings_menu_status.menu_position - common_setting_entries_count;
+
+			assert(settings_menu_status.menu_position < total_setting_entries_count);
+
 			// Print common settings
-			for (int i = 0; i < ARRAY_LENGTH(SETTING_ENTRIES); i++) {
+			for (size_t i = 0; i < common_setting_entries_count; i++)
 				printListLine(
 					i == settings_menu_status.menu_position,
-					SETTING_ENTRIES[i].text
+					COMMON_SETTING_ENTRIES[i].text
 				);
-			}
 			// Print mode specific settings
-			switch (current_settings.mode) {
-				case CYCLING_COLORS:
-					for (int i = 0; i < ARRAY_LENGTH(CYCLING_COLORS_SETTING_ENTRIES); i++)
-						printListLine(
-							i == adj_menu_position,
-							CYCLING_COLORS_SETTING_ENTRIES[i].text
-						);
-					break;
-				case WHITE_SCREEN:
-			}
+			for (size_t i = 0; i < mode_specific_setting_entries_count; i++)
+				printListLine(
+					i == adj_menu_position,
+					MODE_SPECIFIC_SETTING_ENTRIES[current_settings.mode].entries[i].text
+				);
 			break;
 		case SELECT_SCREENS:
 			assert(settings_menu_status.submenu_position < ARRAY_LENGTH(SCREEN_ENTRIES));
 			printf("Screens:\n");
-			for (int i = 0; i < ARRAY_LENGTH(SCREEN_ENTRIES); i++) {
+			for (size_t i = 0; i < ARRAY_LENGTH(SCREEN_ENTRIES); i++) {
 				printListLine(
 					i == settings_menu_status.submenu_position,
 					SCREEN_ENTRIES[i].text
@@ -178,7 +187,7 @@ void printSettingsMenu(PrintConsole *p_console) {
 			break;
 		case MODE:
 			printf("Mode:\n");
-			for (int i = 0; i < ARRAY_LENGTH(MODE_ENTRIES); i++) {
+			for (size_t i = 0; i < ARRAY_LENGTH(MODE_ENTRIES); i++) {
 				printListLine(
 					i == settings_menu_status.submenu_position,
 					MODE_ENTRIES[i].text
@@ -236,7 +245,7 @@ void printSettingsMenu(PrintConsole *p_console) {
 			break;
 	}
 
-	// Print instructions on the bottom of the screen
+	// Print instructions at the bottom of the screen
 	consoleSetColor(NULL, CONSOLE_WHITE);
     consoleSetCursor(NULL, 0, p_console->consoleHeight - 1);
 	printf("Press B to go back");
@@ -252,7 +261,7 @@ void printSettingsMenu(PrintConsole *p_console) {
 		printf("Use dpad UP/DOWN to incr/decr");
 	}
 
-	// Print number input and extra instructions on the bottom of the screen
+	// Print number input and extra instructions at the bottom of the screen
 	if (settings_menu_status.current_screen >= SCREEN_ON_LENGTH) {
 		printNumberInput();
 		// Show invalid value warning if number input is 0 for screen on duration or cycles count
@@ -279,8 +288,14 @@ void printSettingsMenu(PrintConsole *p_console) {
 void handleSettingsInput (
 	const u16 keys_down
 ) {
-	SettingScreen current_screen = settings_menu_status.current_screen;
-	int submenu_position = settings_menu_status.submenu_position;
+	const SettingScreen current_screen = settings_menu_status.current_screen;
+	const size_t submenu_position = settings_menu_status.submenu_position,
+		common_setting_entries_count = ARRAY_LENGTH(COMMON_SETTING_ENTRIES),
+		mode_specific_setting_entries_count = MODE_SPECIFIC_SETTING_ENTRIES[current_settings.mode].count,
+		// Calculate number of actual entries in main settings menu
+		total_setting_entries_count = common_setting_entries_count + mode_specific_setting_entries_count,
+		// Calculate cursor position to be used for mode-specific settings
+		adj_menu_position = settings_menu_status.menu_position - common_setting_entries_count;
 
 	if (keys_down & (KEY_A | KEY_B | KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT))
 		setReprintBottom(true);
@@ -289,20 +304,14 @@ void handleSettingsInput (
 	if (keys_down & KEY_A) {
 		switch (current_screen) {
 			case MAIN_SETTINGS_MENU:
-				SettingScreen target = 0; //init to shutup gcc
+				SettingScreen target;
 				// Get highlighted option in main settings menu
 				// If the cursor is over a common setting, get the value from the array as is
-				if (settings_menu_status.menu_position < ARRAY_LENGTH(SETTING_ENTRIES))
-					target = SETTING_ENTRIES[settings_menu_status.menu_position].target;
+				if (settings_menu_status.menu_position < common_setting_entries_count)
+					target = COMMON_SETTING_ENTRIES[settings_menu_status.menu_position].target;
 				// Otherwise, calculate the actual offset, and get the setting from the array corresponding to the current mode
-				else {
-					int adj_menu_position = settings_menu_status.menu_position - ARRAY_LENGTH(SETTING_ENTRIES);
-					switch (current_settings.mode) {
-						case CYCLING_COLORS:
-							target = CYCLING_COLORS_SETTING_ENTRIES[adj_menu_position].target;
-						case WHITE_SCREEN:
-					}
-				}
+				else
+					target = MODE_SPECIFIC_SETTING_ENTRIES[current_settings.mode].entries[adj_menu_position].target;
 
 				// Prepare variables for submenu, by highlighting the current option
 				// or copying a number value to the input buffer
@@ -334,6 +343,7 @@ void handleSettingsInput (
 							current_settings.cycling_colors_settings.delay,
 							settings_menu_status.number_input_buffer
 						);
+						break;
 					case SELECT_SCREENS:
 						settings_menu_status.submenu_position = current_settings.screens;
 						break;
@@ -434,24 +444,15 @@ void handleSettingsInput (
 			
 			// Handle screens with lists (along with the if below)
 			case MAIN_SETTINGS_MENU:
-				int menu_position = settings_menu_status.menu_position;
-				// Calculate list length based on current mode, adding mode-specific settings to the count
-				int setting_entires_count = ARRAY_LENGTH(SETTING_ENTRIES);
-				switch (current_settings.mode) {
-					case CYCLING_COLORS:
-						setting_entires_count += ARRAY_LENGTH(CYCLING_COLORS_SETTING_ENTRIES);
-						break;
-					case WHITE_SCREEN:
-				}
-
+				size_t menu_position = settings_menu_status.menu_position;
 				// MAIN menu dpad handling
 				if (keys_down & KEY_UP) {
 					if (menu_position == 0)
-						settings_menu_status.menu_position = setting_entires_count - 1;
+						settings_menu_status.menu_position = total_setting_entries_count - 1;
 					else
 						settings_menu_status.menu_position--;
 				} else if (keys_down & KEY_DOWN) {
-					if (menu_position == setting_entires_count - 1)
+					if (menu_position == total_setting_entries_count - 1)
 						settings_menu_status.menu_position = 0;
 					else
 						settings_menu_status.menu_position++;
@@ -488,7 +489,7 @@ void handleSettingsInput (
  * @param backlight_level unsigned int backlight level
  */
 void initSettingsBacklightLevel(
-	unsigned int backlight_level
+	const unsigned int backlight_level
 ) {
 	current_settings.backlight_level = backlight_level;
 }
