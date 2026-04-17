@@ -1,57 +1,13 @@
-#ifndef DS_DEYELLOWER_PROCESS_H
-#define DS_DEYELLOWER_PROCESS_H
+#pragma once
+#include <nds.h>
+#include <stdbool.h>
 
-#include "common.h"
-
-#define WHITE  0b0111111111111111
-#define BLUE   0b0111110000000000
-#define YELLOW 0b0000001111111111
-#define BLACK  0
-
-#define BLUE_INCREMENT   0b0000010000000000
-#define YELLOW_INCREMENT 0b0000000000100001
-#define WHITE_INCREMENT (BLUE_INCREMENT | YELLOW_INCREMENT)
-
-typedef enum {
-    BLACK_TO_BLUE,
-    BLUE_TO_YELLOW,
-    YELLOW_TO_WHITE,
-    WHITE_TO_BLACK
-} CyclingPhase;
-
-void init_screen_on_phase(
-    Mode mode,
-    int minutes,
-    int* seconds,
-    u16* backdrop_color,
-    CyclingPhase* current_cycling_phase
-);
-
-void init_screen_off_phase (
-    int minutes,
-    int* seconds
-);
-
-void handleBacklight(
-    int *current_backlight_top,
-    int *current_backlight_bottom,
-    int *last_backlight_top,
-    int *last_backlight_bottom,
-    int backlight_level,
-    int MAX_BACKLIGHT_LEVEL,
-    int CONSOLE_TYPE,
-    int is_phase_screen_on,
+void startProcess(u16 keys_held);
+void initCurrentBacklights(int level);
+void printProcess(const PrintConsole *p_console);
+void fadeColors();
+void handleProcessInput(
     u16 keys_held,
-    Screens screens
+    u16 keys_down,
+    u16 keys_up
 );
-
-void print_progress_message(
-    PrintConsole* console,
-    int remaining_seconds,
-    int remaining_repetitions,
-    int is_screen_off_phase
-);
-
-void setBackdropBoth(u16 col);
-
-#endif
