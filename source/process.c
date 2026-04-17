@@ -51,13 +51,13 @@ void timer_handler() {
         if (process_status.is_screen_on_phase) {
             // Decrease remaining cycles
             process_status.remaining_cycles--;
-            // If no more cycles remain, shutdown
-            if (process_status.remaining_cycles <= 0)
-                systemShutDown();
             // Init timer
             process_status.remaining_seconds = current_settings.screen_on_duration_mins * 60;
         } else {
             // Init timer
+            // If no more cycles remain, shutdown
+            if (process_status.remaining_cycles <= 0)
+                systemShutDown();
             process_status.remaining_seconds = current_settings.screen_off_duration_mins * 60;
         }
     }
@@ -237,7 +237,12 @@ void printProcess(const PrintConsole *const p_console) {
             process_status.remaining_seconds / 60 % 60, 
             process_status.remaining_seconds % 60
         );
-        printf("Remaining cycles: %d\n", process_status.remaining_cycles);
+        printf("Remaining cycles: %d\n\n", process_status.remaining_cycles);
+        if (process_status.remaining_cycles == 0) {
+            printf("This is the last cycle, the\n");
+            printf("console will power off after\n");
+            printf("the time has elapsed\n");
+        }
     }
 
     // Print warning if in screen off phase (always printed, as it wouldn't be seen if screen is off)
@@ -371,7 +376,7 @@ void startProcess(const u16 keys_held) {
 
     process_status.is_screen_on_phase = true;
     process_status.remaining_seconds = current_settings.screen_on_duration_mins * 60;
-    process_status.remaining_cycles = current_settings.cycle_count;
+    process_status.remaining_cycles = current_settings.cycle_count - 1;
     process_status.current_backdrop_color = WHITE;
     handleBacklight(keys_held);
     setCurrentStatus(RUNNING_PROCESS);
