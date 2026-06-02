@@ -40,24 +40,28 @@ void timer_handler() {
     }
 
     // Check if time ran out for current phase
-    if (process_status.remaining_seconds <= 0) {
+    if (!process_status.remaining_seconds) {
         // Invert screen on phase and set reprint, except if screen off phase has a duration of 0
         if (current_settings.screen_off_duration_mins > 0) {
             process_status.is_screen_on_phase = !process_status.is_screen_on_phase;
             setReprintBottom(true);
             setReprintTop(true);
         }
+
+        // If no more cycles remain, shutdown
+        if (!process_status.remaining_cycles)
+            systemShutDown();
+
         // Handle phase switching
         if (process_status.is_screen_on_phase) {
+
             // Decrease remaining cycles
             process_status.remaining_cycles--;
+
             // Init timer
             process_status.remaining_seconds = current_settings.screen_on_duration_mins * 60;
         } else {
             // Init timer
-            // If no more cycles remain, shutdown
-            if (process_status.remaining_cycles <= 0)
-                systemShutDown();
             process_status.remaining_seconds = current_settings.screen_off_duration_mins * 60;
         }
     }
@@ -276,11 +280,11 @@ void handleProcessInput(
         *current_backdrop_color = BLUE;
     else if (keys_held & KEY_RIGHT)
         *current_backdrop_color = YELLOW;
+    else if (keys_held & KEY_LEFT)
+        *current_backdrop_color = BLACK;
     // Also if dpad is not held, and screen is off
     else if (keys_held & KEY_DOWN || !process_status.is_screen_on_phase)
         *current_backdrop_color = WHITE;
-    else if (keys_held & KEY_LEFT)
-        *current_backdrop_color = BLACK;
     // Otherwise, set according to current phase
     else {
         switch (current_settings.mode) {
