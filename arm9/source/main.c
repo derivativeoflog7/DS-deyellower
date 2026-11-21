@@ -1,9 +1,17 @@
 #include <nds/debug.h>
 #include <nds.h>
 #include "common.h"
+#include "error.h"
 #include "menu.h"
 #include "process.h"
 #include "settings.h"
+#include "../../arm7/source/console_type.h"
+
+volatile consoleType response = WAITING_RESPONSE;
+
+void FIFO_handler(u32 value, void *userdata) {
+    response = (consoleType)value;
+}
 
 int main(int argc, char **argv) {
     //Initialize things
@@ -17,6 +25,26 @@ int main(int argc, char **argv) {
     vramSetBankC(VRAM_C_SUB_BG);
     consoleInit(&top_console, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, true, true);
     consoleInit(&bottom_console, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+
+    fifoSetValue32Handler(FIFO_USER_01, FIFO_handler, NULL);
+
+    while (response == WAITING_RESPONSE) {}
+    /*printf("%d", response);
+    while (1) {}*/
+    if (response == _DSI && !isDSiMode()) {
+        consoleSelect(&top_console);
+        printDSiError();
+        consoleSelect(&bottom_console);
+        printDSiError();
+        while (1) {
+            scanKeys();
+            const u16 keys_down = keysDown();
+
+            if (keys_down & KEY_START)
+                return 0;
+        }
+    }
+
 
     // Main loop
     while (1) {
