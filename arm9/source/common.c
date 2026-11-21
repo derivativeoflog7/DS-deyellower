@@ -1,8 +1,8 @@
+#include <nds.h>
+#include <stdio.h>
 #include "common.h"
 #include "process.h"
 #include "settings.h"
-#include <nds.h>
-#include <stdio.h>
 
 char debug_buffer[DEBUG_BUFFER_SIZE];
 
@@ -28,24 +28,6 @@ void printBacklightString(
 		printf(" (off)");
 	else if (backlight_level == max_backlight_level)
 		printf(" (max)");
-}
-
-/**
- * Detects the console type by SETTING the backlight to the minimum level
- * @return ConsoleType with detected type
- */
-ConsoleType detectConsoleType() {
-    /*
-    * https://blocksds.skylyrac.net/libnds/system_8h.html#a9bd93bee5409c05451447034b250959b
-    * It's probably possible to do this in a more elegant way by reading some registers directly (which seemingly
-    * is how the library determines if the DS has backlight control or not), but this will suffice for now
-    */
-    u32 test = systemSetBacklightLevel(1);
-    if (isDSiMode() || test == 1)
-        return DSI;
-    if (test == 2)
-        return DS_WITH_BACKLIGHT_CONTROL;
-    return DS_WITHOUT_BACKLIGHT_CONTROL;
 }
 
 /**
@@ -89,21 +71,23 @@ void setCurrentStatus(
 /**
  * Detects, SETS and inits max backlight level in structs
  */
-void initMaxBacklightLevel() {
-	ConsoleType type = detectConsoleType();
-	switch (type) {
+void initGeneralStatus(ConsoleType console_type) {
+	general_status.console_type = console_type;
+	switch (console_type) {
 		case DSI:
 			general_status.max_backlight_level = 5;
 			break;
-		case DS_WITH_BACKLIGHT_CONTROL:
+		case DS_PHAT_WITH_BACKLIGHT_CONTROL:
+		case DS_LITE:
 			general_status.max_backlight_level = 4;
 			break;
-		case DS_WITHOUT_BACKLIGHT_CONTROL:
+		case _3DS:
+		case UNKNOWN:
+		case DS_PHAT_WITHOUT_BACKLIGHT_CONTROL:
 			general_status.max_backlight_level = 1;
 			break;
 		default:
 			assert(false);
 	}
 	initSettingsBacklightLevel(general_status.max_backlight_level);
-	initCurrentBacklights(general_status.max_backlight_level);
 }

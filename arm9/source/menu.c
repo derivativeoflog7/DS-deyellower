@@ -5,6 +5,15 @@
 #include "process.h"
 #include "settings.h"
 
+const char* const console_names[] = {
+	[DS_PHAT_WITHOUT_BACKLIGHT_CONTROL] = "DS Phat without backlight control\n",
+	[DS_PHAT_WITH_BACKLIGHT_CONTROL] = "DS Phat with backlight control\n",
+	[DS_LITE] = "DS Lite\n",
+	[DSI] = "DSi\n",
+	[_3DS] = "3DS\n",
+	[UNKNOWN] = "!UNKNOWN!\n"
+};
+
 /**
  * Prints info (including current settings)
  */
@@ -28,20 +37,8 @@ void printBanner() {
 	consoleSetColor(NULL, CONSOLE_LIGHT_GRAY);
 	printf("Detected console type:\n");
 	consoleSetColor(NULL, CONSOLE_DEFAULT);
-	switch (general_status.max_backlight_level) {
-		case 5:
-			printf("DSi\n");
-			break;
-		case 4:
-			printf("DS/DSLite with backlight control");
-			break;
-		case 1:
-			printf("DS without backlight control\n");
-			break;
-		default:
-			assert(false);
-	}
-	printf("\n");
+	printf("%s\n\n", console_names[general_status.console_type]);
+
 	consoleSetColor(NULL, CONSOLE_LIGHT_GRAY);
 	printf("Current settings:\n");
 	consoleSetColor(NULL, CONSOLE_DEFAULT);
@@ -57,11 +54,15 @@ void printBanner() {
 	// Print additional settings if required by current mode
 	switch (current_settings.mode) {
 		case CYCLING_COLORS:
-			printf("Cycling colors delay: %ufrm\n", current_settings.cycling_colors_settings.delay);
+			printf("Cycling colors delay: %ufrm\n\n", current_settings.cycling_colors_settings.delay);
 			break;
 		case WHITE_SCREEN:
 			break;
 	}
+
+#ifdef SKIP_CONSOLE_CHECK
+	printf("\n!TEST BUILD WITHOUT CONSOLE\nCHECKS!");
+#endif
 }
 
 /**
