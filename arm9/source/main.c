@@ -1,15 +1,20 @@
 #include <nds/debug.h>
 #include <nds.h>
 #include "common.h"
+#include "error.h"
 #include "menu.h"
 #include "process.h"
 #include "settings.h"
+#include "console_type.h"
+
+volatile ConsoleType console_type = WAITING_RESPONSE;
+
+void FIFO_handler(u32 value, void *userdata) {
+    console_type = (ConsoleType)value;
+}
 
 int main(int argc, char **argv) {
     //Initialize things
-    initMaxBacklightLevel();
-    systemSetBacklightLevel(5);
-
     PrintConsole top_console, bottom_console;
     videoSetMode(MODE_0_2D);
     videoSetModeSub(MODE_0_2D);
@@ -17,6 +22,43 @@ int main(int argc, char **argv) {
     vramSetBankC(VRAM_C_SUB_BG);
     consoleInit(&top_console, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, true, true);
     consoleInit(&bottom_console, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+    fifoSetValue32Handler(FIFO_USER_01, FIFO_handler, NULL);
+
+    // Check console type, and error out if necessary
+    while (console_type == WAITING_RESPONSE) {}
+#ifndef SKIP_CONSOLE_CHECK
+    assert(console_type != UNKNOWN);
+    bool error = false;
+    if (console_type == DSI && !isDSiMode()) {
+        error = true;
+        consoleSelect(&top_console);
+        printDSiError();
+        consoleSelect(&bottom_console);
+        printDSiError();
+    } else if (console_type == _3DS) {
+        error = true;
+        consoleSelect(&top_console);
+        print3DSError();
+        consoleSelect(&bottom_console);
+        print3DSError();
+    }
+
+    if (error) {
+        while (1) {
+            swiWaitForVBlank();
+            scanKeys();
+            const u16 keys_down = keysDown();
+
+            if (keys_down & KEY_START)
+                return 0;
+        }
+    }
+#else
+    // Tint the top screen dark red if built to skip console checks
+    setBackdropColor(0b0000000000000111);
+#endif
+
+    initGeneralStatus(console_type);
 
     // Main loop
     while (1) {

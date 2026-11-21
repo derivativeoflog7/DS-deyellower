@@ -1,17 +1,12 @@
 #pragma once
 #include <nds.h>
 #include <stdbool.h>
+#include "console_type.h"
 
 #define VERSION "3.0.1"
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
 #define DEBUG_BUFFER_SIZE 50
 extern char debug_buffer[]; //for the nocash console, defined in common.c
-
-typedef enum {
-	DSI,
-	DS_WITH_BACKLIGHT_CONTROL,
-	DS_WITHOUT_BACKLIGHT_CONTROL
-} ConsoleType;
 
 typedef enum {
 	MAIN_MENU,
@@ -38,6 +33,7 @@ typedef struct {
 	Status current_status;
 	//TODO figure this out
 	/*const*/ unsigned int max_backlight_level;
+	/*const*/ ConsoleType console_type;
 	bool do_reprint_bottom, do_reprint_top;
 } GeneralStatus;
 
@@ -54,9 +50,10 @@ typedef struct {
 	PrintConsole *top, *bottom;
 } Consoles;
 
-ConsoleType detectConsoleType();
 GeneralStatus getGeneralStatus();
-void initMaxBacklightLevel();
+void initGeneralStatus(
+	ConsoleType type
+);
 void setCurrentStatus(
 	Status status
 );

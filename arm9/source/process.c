@@ -81,7 +81,6 @@ void setBacklightAdjusted(
      * On DSi, just set the level as is
      * On DS (lite) with backlight control, add 1 to the backlight level, as they are shifted by one (except 0)
      * On DS without backlight control, set to 5 if backlight level is 1
-     * This ensures max backlight level works even if the console gets misidentified
      */
     assert(max_backlight_level <= 5);
     assert(backlight_level <= max_backlight_level);
@@ -369,6 +368,7 @@ void fadeColors() {
  */
 void startProcess(const u16 keys_held) {
     Settings current_settings = getCurrentSettings();
+    GeneralStatus general_status = getGeneralStatus();
     setBackdropBoth(WHITE);
 
     switch (current_settings.mode) {
@@ -382,18 +382,11 @@ void startProcess(const u16 keys_held) {
     process_status.remaining_seconds = current_settings.screen_on_duration_mins * 60;
     process_status.remaining_cycles = current_settings.cycle_count - 1;
     process_status.current_backdrop_color = WHITE;
-    handleBacklight(keys_held);
+    process_status.current_backlight_top = process_status.current_backlight_bottom = current_settings.backlight_level;
+    setBacklightAdjusted(current_settings.backlight_level, general_status.max_backlight_level);
     setCurrentStatus(RUNNING_PROCESS);
     setReprintBottom(true);
     setReprintTop(true);
     disableSleep();
     timerStart(0, ClockDivider_1024, timerFreqToTicks_1024(1), timer_handler);
-}
-
-/**
- * Initialize current backlight level in process_status 
- * @param level level to initialize to
- */
-void initCurrentBacklights(const int level) {
-    process_status.current_backlight_top = process_status.current_backlight_bottom = level;
 }
