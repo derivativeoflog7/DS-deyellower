@@ -11,7 +11,7 @@ static inline void printDSiError() {
     printf("as software running in DS mode\n");
     printf("may not be able to correctly set");
     printf("backlight levels on a DSi.\n\n");
-    printf("DS deyellower cannot be run from\n");
+    printf("DS deyellower cannot be run from");
     printf("a DS mode flashcart or forced\n");
     printf("into DS mode via TwilightMenu++\n");
     printf("on a DSi.\n\n");
