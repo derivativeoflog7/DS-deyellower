@@ -59,9 +59,17 @@ void printBanner() {
 		case WHITE_SCREEN:
 			break;
 	}
+	printf("\n");
 
 #ifdef SKIP_CONSOLE_CHECK
-	printf("\n!TEST BUILD WITHOUT CONSOLE\nCHECKS!");
+	printf("!BUILT WITH SKIP_CONSOLE_CHECK!\n");
+#endif
+#ifdef SELECT_TO_STOP
+	printf("!BUILT WITH SELECT_TO_STOP!\n");
+#endif
+#if defined(SKIP_CONSOLE_CHECK) || defined(SELECT_TO_STOP)
+    // Tint the top screen red if test build
+    setBackdropColor(TEST_BUILD_BACKGROUND_COLOR);
 #endif
 }
 

@@ -14,6 +14,9 @@
 #define YELLOW_INCREMENT 0b0000000000100001
 #define WHITE_INCREMENT (BLUE_INCREMENT | YELLOW_INCREMENT)
 
+#define SCREEN_OFF -1
+#define BACKLIGHT_UNDEFINED -2
+
 // init process status, backdrop color is set black since that's the color in the menus
 static ProcessStatus process_status = {
     .current_backdrop_color = BLACK,
@@ -130,10 +133,10 @@ void handleBacklight(
     if (is_screen_on_phase) {
         *current_backlight_bottom = backlight_level;
         *current_backlight_top = backlight_level;
-    // Otherwise, set both current levels to off (-1)
+    // Otherwise, set both current levels to screen off
     } else {
-        *current_backlight_bottom = -1;
-        *current_backlight_top = -1;
+        *current_backlight_bottom = SCREEN_OFF;
+        *current_backlight_top = SCREEN_OFF;
     }
 
     // If dpad is being held, set both screens to max backlight
@@ -147,25 +150,26 @@ void handleBacklight(
         *current_backlight_top = PM_BACKLIGHT_MIN;
     }
 
-    // Set to zero if the corresponding backlight is off, but only if the screen and backlight are on
+    // If screen is disabled, set backlight to 0, but only if the other screen and its backlight is on
     if (screens == TOP && *current_backlight_top > PM_BACKLIGHT_OFF)
         *current_backlight_bottom = PM_BACKLIGHT_OFF;
     else if (screens == BOTTOM && *current_backlight_bottom > PM_BACKLIGHT_OFF)
         *current_backlight_top = PM_BACKLIGHT_OFF;
 
     // Turn on screens if they were off...
-    if (*last_backlight_bottom == -1 && *current_backlight_bottom != -1) {
-        assert(*last_backlight_top == -1);
-        assert(*current_backlight_bottom != -1);
+    if (*last_backlight_bottom == SCREEN_OFF && *current_backlight_bottom != SCREEN_OFF) {
+        // Since screens cannot be independently turned off, check that they're both supposed to be on
+        assert(*last_backlight_top == SCREEN_OFF);
+        assert(*current_backlight_bottom != SCREEN_OFF);
 
         powerOn(POWER_LCD);
         nocashMessage("Turned ON the screens");
         has_backlight_changed = 1;
     }
     // ...and vice versa
-    else if (*last_backlight_bottom != -1 && *current_backlight_bottom == -1) {
-        assert(*last_backlight_top != -1);
-        assert(*current_backlight_bottom == -1);
+    else if (*last_backlight_bottom != SCREEN_OFF && *current_backlight_bottom == SCREEN_OFF) {
+        assert(*last_backlight_top != SCREEN_OFF);
+        assert(*current_backlight_bottom == SCREEN_OFF);
 
         powerOff(POWER_LCD);
         nocashMessage("Turned OFF the screens");
@@ -311,6 +315,18 @@ void handleProcessInput(
     if (process_status.last_backdrop_color != *current_backdrop_color)
         setBackdropBoth(*current_backdrop_color);
 
+#ifdef SELECT_TO_STOP
+    if (keys_held & KEY_SELECT) {
+        timerStop(0);
+        setCurrentStatus(MAIN_MENU);
+        setBackdropColor(TEST_BUILD_BACKGROUND_COLOR);
+        setBackdropColorSub(0);
+        setReprintBottom(true);
+        setReprintTop(true);
+    }
+
+#endif
+
     handleBacklight(keys_held);
 }
 
@@ -368,7 +384,6 @@ void fadeColors() {
  */
 void startProcess(const u16 keys_held) {
     Settings current_settings = getCurrentSettings();
-    GeneralStatus general_status = getGeneralStatus();
     setBackdropBoth(WHITE);
 
     switch (current_settings.mode) {
@@ -382,8 +397,7 @@ void startProcess(const u16 keys_held) {
     process_status.remaining_seconds = current_settings.screen_on_duration_mins * 60;
     process_status.remaining_cycles = current_settings.cycle_count - 1;
     process_status.current_backdrop_color = WHITE;
-    process_status.current_backlight_top = process_status.current_backlight_bottom = current_settings.backlight_level;
-    setBacklightAdjusted(current_settings.backlight_level, general_status.max_backlight_level);
+    process_status.current_backlight_top = process_status.current_backlight_bottom = BACKLIGHT_UNDEFINED;
     setCurrentStatus(RUNNING_PROCESS);
     setReprintBottom(true);
     setReprintTop(true);

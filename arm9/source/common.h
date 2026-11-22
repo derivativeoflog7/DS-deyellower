@@ -3,10 +3,12 @@
 #include <stdbool.h>
 #include "console_type.h"
 
-#define VERSION "3.1"
+#define VERSION "3.1.1"
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
 #define DEBUG_BUFFER_SIZE 50
 extern char debug_buffer[]; //for the nocash console, defined in common.c
+
+#define TEST_BUILD_BACKGROUND_COLOR 0b0000000000001111
 
 typedef enum {
 	MAIN_MENU,

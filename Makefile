@@ -13,6 +13,9 @@ CFLAGS	+= "-Iarm7/include"
 ifdef SKIP_CONSOLE_CHECK
 	CFLAGS	+= -DSKIP_CONSOLE_CHECK
 endif
+ifdef SELECT_TO_STOP
+	CFLAGS	+= -DSELECT_TO_STOP
+endif
 
 export CFLAGS
 
