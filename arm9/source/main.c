@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 #endif
 #if defined(SKIP_CONSOLE_CHECK) || defined(SELECT_TO_STOP)
     // Tint the top screen red if test build
-    setBackdropColor(0b0000000000001111);
+    setBackdropColor(TEST_BUILD_BACKGROUND_COLOR);
 #endif
 
     initGeneralStatus(console_type);
