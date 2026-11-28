@@ -5,7 +5,7 @@
 #include "process.h"
 #include "settings.h"
 
-const char* const console_names[] = {
+static const char* const console_names[] = {
 	[DS_PHAT_WITHOUT_BACKLIGHT_CONTROL] = "DS Phat without backlight control\n",
 	[DS_PHAT_WITH_BACKLIGHT_CONTROL] = "DS Phat with backlight control\n",
 	[DS_LITE] = "DS Lite\n",

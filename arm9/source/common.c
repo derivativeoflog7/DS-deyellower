@@ -7,11 +7,7 @@
 char debug_buffer[DEBUG_BUFFER_SIZE];
 
 // Init general status (except backlight which is done at runtime)
-GeneralStatus general_status = {
-	.current_status = MAIN_MENU,
-	.do_reprint_bottom = true,
-	.do_reprint_top = true
-};
+static GeneralStatus general_status;
 
 /**
  * Prints the backlight level, along with " (off)" or " (max)" when needed
@@ -73,22 +69,29 @@ void setCurrentStatus(
  * @param console_type Console type
  */
 void initGeneralStatus(ConsoleType console_type) {
-	general_status.console_type = console_type;
+	int max_backlight_level;
 	switch (console_type) {
 		case DSI:
-			general_status.max_backlight_level = 5;
+			max_backlight_level = 5;
 			break;
 		case DS_PHAT_WITH_BACKLIGHT_CONTROL:
 		case DS_LITE:
-			general_status.max_backlight_level = 4;
+			max_backlight_level = 4;
 			break;
 		case _3DS:
 		case UNKNOWN:
 		case DS_PHAT_WITHOUT_BACKLIGHT_CONTROL:
-			general_status.max_backlight_level = 1;
+			max_backlight_level = 1;
 			break;
 		default:
 			assert(false);
 	}
+	general_status = (GeneralStatus){
+		.current_status = MAIN_MENU,
+		.do_reprint_bottom = true,
+		.do_reprint_top = true,
+		.console_type = console_type,
+		.max_backlight_level = max_backlight_level
+	};
 	initSettingsBacklightLevel(general_status.max_backlight_level);
 }

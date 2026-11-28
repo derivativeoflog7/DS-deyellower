@@ -7,9 +7,9 @@
 #include "settings.h"
 #include "console_type.h"
 
-volatile ConsoleType console_type = WAITING_RESPONSE;
+static volatile ConsoleType console_type = WAITING_RESPONSE;
 
-void FIFO_handler(u32 value, void *userdata) {
+static void FIFO_handler(u32 value, void *userdata) {
     console_type = (ConsoleType)value;
 }
 
@@ -90,6 +90,7 @@ int main(int argc, char **argv) {
                 );
                 break;
             case RUNNING_PROCESS:
+                fadeColors();
                 handleProcessInput(
                     keys_held,
                     keys_down,
@@ -97,9 +98,6 @@ int main(int argc, char **argv) {
                 );
                 break;
         }
-
-        if (general_status.current_status == RUNNING_PROCESS)
-            fadeColors();
 
 
         // Reprint top screen if needed

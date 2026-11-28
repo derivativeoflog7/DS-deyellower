@@ -5,6 +5,12 @@
 #include <nds.h>
 #include <stdio.h>
 
+// Names for modes, extern declared in settings.h
+const char* const MODE_NAMES[] = {
+	[WHITE_SCREEN] = "White screen",
+	[CYCLING_COLORS] = "Cycling colors"
+};
+
 // Initialize default settings (apart from backlight level which is done at runtime)
 static Settings current_settings = {
 	.screen_on_duration_mins = 120,
@@ -23,13 +29,6 @@ static SettingsMenuStatus settings_menu_status = {
 	.submenu_position = 0
 };
 
-// Names for modes, extern declared in settings.h
-const char* const MODE_NAMES[] = {
-	[WHITE_SCREEN] = "White screen",
-	[CYCLING_COLORS] = "Cycling colors" 
-};
-
-
 /**
  * Setting entries shown regardless of selected mode
  */
@@ -47,7 +46,7 @@ static const SettingsEntry COMMON_SETTING_ENTRIES[] = {
  */
 static const SettingEntriesCollection MODE_SPECIFIC_SETTING_ENTRIES[] = {
 	MAKE_SETTING_ENTRIES_COLLECTION(WHITE_SCREEN),
-	[CYCLING_COLORS] = (SettingEntriesCollection){ .count = 0 + (sizeof((SettingsEntry[]){ {CYCLING_COLORS_SPEED, "Cycling colors speed"} }) / sizeof(SettingsEntry)), .entries = (SettingsEntry[]){ {CYCLING_COLORS_SPEED, "Cycling colors speed"} } }
+	MAKE_SETTING_ENTRIES_COLLECTION(CYCLING_COLORS, {CYCLING_COLORS_SPEED, "Cycling colors speed"})
 };
 
 /**

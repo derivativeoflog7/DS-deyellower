@@ -30,7 +30,7 @@ static ProcessStatus process_status = {
 /**
  * Timer handler called every second
  */
-void timer_handler() {
+static void timer_handler() {
     Settings current_settings = getCurrentSettings();
     
     // Tick
@@ -94,7 +94,7 @@ void setBacklightAdjusted(
  * Set backdrop on both screens
  * @param col color to set
  */
-void setBackdropBoth(u16 col) {
+static void setBackdropBoth(u16 col) {
     setBackdropColor(col);
     setBackdropColorSub(col);
 }
@@ -103,7 +103,7 @@ void setBackdropBoth(u16 col) {
  * Handle backlight
  * @param keys_held held keys 
  */
-void handleBacklight(
+static void handleBacklight(
 	const u16 keys_held
 ) {
     /*

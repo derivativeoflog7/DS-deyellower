@@ -33,24 +33,10 @@ typedef enum {
  */
 typedef struct {
 	Status current_status;
-	//TODO figure this out
-	/*const*/ unsigned int max_backlight_level;
-	/*const*/ ConsoleType console_type;
+	unsigned int max_backlight_level;
+	ConsoleType console_type;
 	bool do_reprint_bottom, do_reprint_top;
 } GeneralStatus;
-
-/** @struct Consoles
- * Pointers to both consoles
- * 
- * @var Consoles::top
- * Pointer to top console
- * 
- * @var Consoles::bottom
- * Pointer to bottom console
- */
-typedef struct {
-	PrintConsole *top, *bottom;
-} Consoles;
 
 GeneralStatus getGeneralStatus();
 void initGeneralStatus(
