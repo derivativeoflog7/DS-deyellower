@@ -69,7 +69,8 @@ void setCurrentStatus(
 }
 
 /**
- * Detects, SETS and inits max backlight level in structs
+ * Inits max backlight level in structs
+ * @param console_type Console type
  */
 void initGeneralStatus(ConsoleType console_type) {
 	general_status.console_type = console_type;

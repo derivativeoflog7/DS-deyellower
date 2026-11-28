@@ -54,7 +54,7 @@ typedef struct {
 
 GeneralStatus getGeneralStatus();
 void initGeneralStatus(
-	ConsoleType type
+	ConsoleType console_type
 );
 void setCurrentStatus(
 	Status status
